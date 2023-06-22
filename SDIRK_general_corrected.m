@@ -11,11 +11,12 @@ Nsteps = ceil( (tf-t0) / h );
 t=linspace(t0,tf,Nsteps+1);
 
 % Initialize solution matrix
-y = zeros(length(y0),Nsteps);
+y = zeros(length(y0),Nsteps+1);
 y(:,1) = y0;
 
 % Coefficients for SDIRK method
 [A, b, gamma] = SDIRK_coefficients(sdirk_method);
+c = sum(A, 2);
 
 % Number of stages
 s = length(b);
@@ -23,6 +24,11 @@ s = length(b);
 % Initialize stages
 F = zeros(length(y0), s);
 Y = zeros(length(y0), s);
+Y_clip = zeros(length(y0), s);
+
+opt.Display = 'off';
+opt.StepTolerance = 1e-8;
+opt.FunctionTolerance = 1e-8;
 
 % Loop over time
 for i = 2:length(t)
@@ -39,21 +45,25 @@ for i = 2:length(t)
         % Y(:,istage) = U + dt*gamma*ode_func(t(i), Y(:,istage));
 
         Y_0 = U;
-        solver_func = @(y_stage)nonlinear_system_solver(U, dt, gamma, y_stage, matrix_func, t(i));
-        y_stage = fsolve(solver_func, Y_0);
+        solver_func = @(y_stage)nonlinear_system_solver(U, dt, gamma, y_stage, matrix_func, t(i-1) + dt*c(istage));
+        y_stage = fsolve(solver_func, Y_0, opt);
         Y(:,istage) = y_stage;
+		Y_clip(:,istage) = max(y_stage,0);
         % Y(:,istage) = max(Y(:,istage), thr);
 
 
-        F(:,istage) = ode_func(t(i), Y(:,istage));
+        F(:,istage) = ode_func(t(i-1) + dt*c(istage), Y(:,istage));
     end
 
     % Update solution
     y_new = y(:,i-1);
+	y_new_clip = max(y_new,sqrt(eps));
     for idx = 1:s
         y_new = y_new + dt*b(idx)*F(:,idx);
-        Fmean = b(idx)*matrix_func(Y(:,idx), t(i))*diag(Y(:,idx)./y_new);
-    end
+	end
+	for idx = 1:s
+        Fmean = b(idx)*matrix_func(Y_clip(:,idx), t(i-1) + dt*c(idx))*diag(Y_clip(:,idx)./y_new_clip);
+	end
 
     y(:,i) = (eye(length(Fmean)) - dt*Fmean)\y(:,i-1);
 end
@@ -80,14 +90,12 @@ switch (method)
         b(2)   = .2928932188134524755991556378951510d0;
     case(2)
         % 2 stages
-        gamma  = 1.707106781186547524400844362104849d0;
+		x = 1 - sqrt(2)/2;
+        gamma  = x;
 
-        A(1,1) = 1.707106781186547524400844362104849d0;
-        A(2,1) = -.707106781186547524400844362104849d0;
-        A(2,2) = 1.707106781186547524400844362104849d0;
+		A = [[x,0];[1-x,x]];
 
-        b(1)   = -.707106781186547524400844362104849d0;
-        b(2)   = 1.707106781186547524400844362104849d0;
+        b = A(end,:);
     case(3)
         % 3 stages
         gamma = .2113248654051871177454256097490213d0;

@@ -17,6 +17,7 @@ y(:,1) = y0;
 % Coefficients for Runge-Kutta method
 [A, B, C] = RK_coefficients(rk_method);
 
+
 % Number of stages
 s = length(B);
 
@@ -49,7 +50,7 @@ for i = 2:length(t)
 
     % Correction
     for idx = 1:s
-        Kmean = B(idx)*matrix_func(Y(:,idx), t(i))*diag(Y(:,idx)./y_new);
+        Kmean = B(idx)*matrix_func(max(Y(:,idx),0), t(i-1) + C(idx)*dt)*diag(max(Y(:,idx),0)./max(y_new,sqrt(eps)));
     end
 
     y(:,i) = (eye(length(y0)) - dt*Kmean)\y(:,i-1);
