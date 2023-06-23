@@ -27,7 +27,7 @@ Kmatrix_stratosperic = @(Y, t) calculateKmatrix(Y, t);
 for jstep=1:length(H)
     h = H(jstep);
 
-    [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)stratospheric_reaction_2(t,x), 3, Kmatrix_stratosperic);
+    [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)stratospheric_reaction_2(t,x), 1, Kmatrix_stratosperic);
     % [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)stratospheric_reaction_2(t,x), 3, Kmatrix_stratosperic);
     % [t,y] = RK_general(t0, tf, h, x0, @(t,x)stratospheric_reaction_2(t,x), 3);
     % [t,y] = RK_general_corrected(t0, tf, h, x0, @(t,x)stratospheric_reaction_2(t,x), 3, Kmatrix_stratosperic);

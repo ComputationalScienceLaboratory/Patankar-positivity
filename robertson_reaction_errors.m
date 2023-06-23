@@ -23,8 +23,8 @@ Kmatrix_robertson = @(Y, t) calculateKmatrix(Y);
 for jstep=1:length(H)
     h = H(jstep);
     
-    [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)robertson_reaction_2(t,x), 3, Kmatrix_robertson);
-    % [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)robertson_reaction_2(t,x), 3, Kmatrix_robertson);
+    % [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)robertson_reaction_2(t,x), 1, Kmatrix_robertson);
+    [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)robertson_reaction_2(t,x), 1, Kmatrix_robertson);
     % [t,y] = RK_general(t0, tf, h, x0, @(t,y)robertson_reaction_2(t,y), 3);
     % [t,y] = RK_general_corrected(t0, tf, h, x0, @(t,x)robertson_reaction_2(t,x), 1, Kmatrix_robertson);
 
