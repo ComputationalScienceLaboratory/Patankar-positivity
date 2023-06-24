@@ -1,4 +1,4 @@
-function [t,y] = RK_general_corrected(t0, tf, h, y0, ode_func, rk_method, matrix_func)
+function [t,y] = RK_general_clipped(t0, tf, h, y0, ode_func, rk_method, matrix_func)
 % t0 - start time
 % tf - end time
 % h - step size
@@ -36,7 +36,8 @@ for i = 2:length(t)
             sum = sum + A(istage, j)*ode_func(arg, Y(:,j));
         end
 
-        Y(:,istage) = Y(:,istage - 1) + dt*sum;
+        y_stage = Y(:,istage - 1) + dt*sum;
+        Y(:,istage) = max(y_stage, 0);
     end
 
     % Update solution
@@ -46,12 +47,7 @@ for i = 2:length(t)
         y_new = y_new + dt*B(idx)*ode_func(time, Y(:,idx));
     end
 
-    % Correction
-    for idx = 1:s
-        Kmean = B(idx)*matrix_func(Y(:,idx), t(i-1) + C(idx)*dt)*diag(Y(:,idx)./y_new);
-    end
-
-    y(:,i) = (eye(length(y0)) - dt*Kmean)\y(:,i-1);
+    y(:,i) = y_new;
 end
 
 end
