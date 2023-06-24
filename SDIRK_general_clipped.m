@@ -1,4 +1,4 @@
-function [t,y] = SDIRK_general(t0, tf, h, y0, ode_func, sdirk_method, matrix_func )
+function [t,y] = SDIRK_general_clipped(t0, tf, h, y0, ode_func, sdirk_method, matrix_func )
 % t0 - start time
 % tf - end time
 % h - step size
@@ -26,6 +26,7 @@ s = length(b);
 % Initialize stages
 F = zeros(length(y0), s);
 Y = zeros(length(y0), s);
+Y_clip = zeros(length(y0), s);
 
 opt.Display = 'off';
 opt.StepTolerance = 1e-10;
@@ -56,8 +57,9 @@ for i = 2:length(t)
             disp 'iter';
         end
         Y(:,istage) = y_stage;
+        Y_clip(:,istage) = max(y_stage,0);
 
-        F(:,istage) = ode_func(t(i-1) + dt*c(istage), Y(:,istage));
+        F(:,istage) = ode_func(t(i-1) + dt*c(istage), Y_clip(:,istage));
     end
 
 
@@ -68,10 +70,10 @@ for i = 2:length(t)
             y_new = y_new + dt*b(idx)*F(:,idx);
         end
 
-        y(:,i) = y_new;
+        y(:,i) = max(y_new,0);
 
     else
-        y(:,i) = y_stage;
+        y(:,i) = max(y_stage,0);
 
     end
 end
@@ -118,7 +120,7 @@ switch (method)
         % b(1)   = .2113248654051871177454256097490213d0;
         % b(2)   = .5773502691896257645091487805019573d0;
         % b(3)   = .2113248654051871177454256097490213d0;
-        % 
+
         % gamma = 1/4;
         % 
         % A(1,1) = 1/4;

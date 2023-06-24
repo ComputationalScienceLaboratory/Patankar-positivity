@@ -19,7 +19,7 @@ H = logspace(-3,-1,6);
 % Error array initialization
 error=zeros(length(H),1);
 
-options = odeset('RelTol',1.0e-6,'AbsTol',1.0e-3, 'Jacobian', @jac_stratospheric);
+options = odeset('RelTol',1.e-12,'AbsTol',1.e-12, 'Jacobian', @jac_stratospheric, 'NonNegative', ones(length(x0),1));
 [t,x] = ode15s(@(t,x)stratospheric_reaction_2(t,x),[t0, tf],x0,options);
 
 Kmatrix_stratosperic = @(Y, t) calculateKmatrix(Y, t);

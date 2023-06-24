@@ -24,7 +24,6 @@ s = length(b);
 % Initialize stages
 F = zeros(length(y0), s);
 Y = zeros(length(y0), s);
-Y_clip = zeros(length(y0), s);
 
 opt.Display = 'off';
 opt.StepTolerance = 1e-8;
@@ -42,27 +41,24 @@ for i = 2:length(t)
             U = U + dt*A(istage, j)*F(:,j);
         end
 
-        % Y(:,istage) = U + dt*gamma*ode_func(t(i), Y(:,istage));
-
         Y_0 = U;
+
+        % func_y = @(ys) U - ys + dt*gamma*ode_func(t(i-1) + dt*c(istage), ys);
         solver_func = @(y_stage)nonlinear_system_solver(U, dt, gamma, y_stage, matrix_func, t(i-1) + dt*c(istage));
         y_stage = fsolve(solver_func, Y_0, opt);
         Y(:,istage) = y_stage;
-        Y_clip(:,istage) = max(y_stage,0);
-        % Y(:,istage) = max(Y(:,istage), thr);
-
 
         F(:,istage) = ode_func(t(i-1) + dt*c(istage), Y(:,istage));
     end
 
     % Update solution
     y_new = y(:,i-1);
-    y_new_clip = max(y_new,sqrt(eps));
     for idx = 1:s
         y_new = y_new + dt*b(idx)*F(:,idx);
     end
+
     for idx = 1:s
-        Fmean = b(idx)*matrix_func(Y_clip(:,idx), t(i-1) + dt*c(idx))*diag(Y_clip(:,idx)./y_new_clip);
+        Fmean = b(idx)*matrix_func(Y(:,idx), t(i-1) + dt*c(idx))*diag(Y(:,idx)./y_new);
     end
 
     y(:,i) = (eye(length(Fmean)) - dt*Fmean)\y(:,i-1);
@@ -111,24 +107,24 @@ switch (method)
         %         b(2)   = .5773502691896257645091487805019573d0;
         %         b(3)   = .2113248654051871177454256097490213d0;
 
-        % 		gamma = 1/4;
+        gamma = 1/4;
+
+        A(1,1) = 1/4;
+        A(2,1) = 1/12;
+        A(2,2) = 1/4;
+        A(3,1) = 0;
+        A(3,2) = 3/4;
+        A(3,3) = 1/4;
+
+        b(1)   = 0;
+        b(2)   = 3/4;
+        b(3)   = 1/4;
+
+        % gamma = 1/3;
         %
-        %         A(1,1) = 1/4;
-        %         A(2,1) = 1/12;
-        %         A(2,2) = 1/4;
-        %         A(3,1) = 0;
-        %         A(3,2) = 3/4;
-        %         A(3,3) = 1/4;
+        % A = [[1/3,0,0];[1/6,1/3,0];[5/6,-5/12,1/3]];
         %
-        %         b(1)   = 0;
-        %         b(2)   = 3/4;
-        %         b(3)   = 1/4;
-
-        gamma = 1/3;
-
-        A = [[1/3,0,0];[1/6,1/3,0];[5/6,-5/12,1/3]];
-
-        b = [6/5, -1, 4/5];
+        % b = [6/5, -1, 4/5];
     case(4)
         % 5 stages
         %         gamma = .2666666666666666666666666666666667d0;

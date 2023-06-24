@@ -10,7 +10,7 @@ t0=0;
 tf=0.2;
 
 % Array of step sizes
-H = logspace(-4,-1,12);
+H = logspace(-3,-2,12);
 
 % Error array initialization
 error=zeros(length(H),1);
@@ -23,10 +23,11 @@ Kmatrix_mapk = @(Y, t) calculateKmatrix(Y);
 for jstep=1:length(H)
     h = H(jstep);
     
-    % [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)mapk_cascade_2(t,x), 1, Kmatrix_mapk);
-    % [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)mapk_cascade_2(t,x), 1, Kmatrix_mapk);
+    % [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)mapk_cascade_2(t,x), 3, Kmatrix_mapk);
+    [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)mapk_cascade_2(t,x), 1, Kmatrix_mapk);
+    % [t,y] = SDIRK_general_clipped(t0, tf, h, x0, @(t,x)mapk_cascade_2(t,x), 3, Kmatrix_mapk);
     % [t,y] = RK_general(t0, tf, h, x0, @(t,x)mapk_cascade_2(t,x), 3);
-    % [t,y] = RK_general_corrected(t0, tf, h, x0, @(t,x)mapk_cascade_2(t,x), 2, Kmatrix_mapk);
+    % [t,y] = RK_general_corrected(t0, tf, h, x0, @(t,x)mapk_cascade_2(t,x), 3, Kmatrix_mapk);
 
     error(jstep) = norm(y(:,end)' - x(end,:));
 %     error(jstep) = norm(y(:,end)' - exp(-tf));
