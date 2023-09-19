@@ -1,4 +1,4 @@
-function dx = mapk_cascade_2(t,x)
+function dx = mapk_cascade(t,x)
     a = Kmatrix_mapk(x);
     
     dx = a*x;

@@ -7,7 +7,7 @@
 % sdirk_method - function that returns constant coefficients associated with method
 
 %%
-function [t,y] = SDIRK_general_corrected(t0, tf, h, y0, ode_func, sdirk_method, matrix_func, jacobian )
+function [t,y] = SDIRK_general_corrected_clipped(t0, tf, h, y0, ode_func, sdirk_method, matrix_func, jacobian )
 
 % Create time grid
 Nsteps = ceil( (tf-t0) / h );
@@ -52,7 +52,7 @@ for i = 2:length(t)
 
         y_stage = newton_iteration(func_y, @(Y)-eye(length(U))+ dt*gamma*jacobian(t(i-1)+dt*c(istage), Y), y(:,i-1));
 
-        Y(:,istage) = y_stage;
+        Y(:,istage) = max(y_stage,0);
 
         F(:,istage) = ode_func(t(i-1) + dt*c(istage), Y(:,istage));
     end
@@ -63,6 +63,8 @@ for i = 2:length(t)
     else
         y_new = y_stage;
     end
+
+    y_new = max(y_new, 0);
 
     for idx = 1:s
         Fmean = b(idx)*matrix_func(Y(:,idx), t(i-1) + dt*c(idx))*diag(Y(:,idx)./y_new);

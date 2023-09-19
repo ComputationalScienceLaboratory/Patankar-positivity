@@ -1,4 +1,4 @@
-function dx = robertson_reaction_2(t,x)
+function dx = robertson_reaction(t,x)
     a = Kmatrix_robertson(x);
     
     dx = a*x;

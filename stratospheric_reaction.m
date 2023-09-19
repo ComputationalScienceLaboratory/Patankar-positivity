@@ -1,4 +1,4 @@
-function dx = stratospheric_reaction_2(t,x)
+function dx = stratospheric_reaction(t,x)
     a = Kmatrix_stratospheric(x, t);
     dx = a*x;
 end

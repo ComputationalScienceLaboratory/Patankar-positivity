@@ -7,32 +7,35 @@ x0 = [1; 0; 0];
 t0=0;
 
 % End time
-tf=0.3;
+tf=1e4;
 
 % Array of step sizes
-H = logspace(-4,-2,24);
+H = logspace(-2,1,12);
 
 % Error array initialization
 error=zeros(length(H),1);
 
 options = odeset('RelTol',1.e-12,'AbsTol',1.e-12, 'Jacobian', @jac_robertson);
-[t,x] = ode15s(@(t,x)robertson_reaction_2(t,x),[t0,tf],x0,options);
+[t,x] = ode15s(@(t,x)robertson_reaction(t,x),[t0,tf],x0,options);
 
 Kmatrix_robertson = @(Y, t) calculateKmatrix(Y);
 
 for jstep=1:length(H)
     h = H(jstep);
-    
-    % [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)robertson_reaction_2(t,x), 1, Kmatrix_robertson);
-    [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)robertson_reaction_2(t,x), 1, Kmatrix_robertson);
-    % [t,y] = RK_general(t0, tf, h, x0, @(t,y)robertson_reaction_2(t,y), 3);
-    % [t,y] = RK_general_corrected(t0, tf, h, x0, @(t,x)robertson_reaction_2(t,x), 1, Kmatrix_robertson);
+
+    [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)robertson_reaction(t,x), 3, Kmatrix_robertson);
+    % [t,y, Y_delta] = SDIRK_general_clipped(t0, tf, h, x0, @(t,x)robertson_reaction(t,x), 4, Kmatrix_robertson);
+    % [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)robertson_reaction(t,x), 1, Kmatrix_robertson);
+    % [t,y] = RK_general(t0, tf, h, x0, @(t,y)robertson_reaction(t,y), 3);
+    % [t,y] = RK_general_corrected(t0, tf, h, x0, @(t,x)robertson_reaction(t,x), 1, Kmatrix_robertson);
 
     error(jstep) = norm(y(:,end)' - x(end,:));
 end
 
 
 err = polyfit(log(H),log(error),1);
+
+
 
 loglog(H,error);
 

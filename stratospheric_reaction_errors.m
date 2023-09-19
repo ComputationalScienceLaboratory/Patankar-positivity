@@ -8,29 +8,30 @@ x0 = [9.906E+01; 6.624E+08; 5.326E+11; 1.697E+16; 8.725E+08; 2.240E+08];
 
 
 % Start time
-t0=0;
+t0=12*3600;
 
 % End time
-tf=0.3;
+tf=t0+24*3600;
 
 % Array of step sizes
-H = logspace(-3,-1,6);
+H = logspace(-1,1,7);
 
 % Error array initialization
 error=zeros(length(H),1);
 
-options = odeset('RelTol',1.e-12,'AbsTol',1.e-12, 'Jacobian', @jac_stratospheric, 'NonNegative', ones(length(x0),1));
-[t,x] = ode15s(@(t,x)stratospheric_reaction_2(t,x),[t0, tf],x0,options);
+options = odeset('RelTol',1.e-8,'AbsTol',1.e-8, 'Jacobian', @jac_stratospheric, 'NonNegative', ones(length(x0),1));
+[t,x] = ode15s(@(t,x)stratospheric_reaction(t,x),[t0, tf],x0,options);
 
 Kmatrix_stratosperic = @(Y, t) calculateKmatrix(Y, t);
 
 for jstep=1:length(H)
     h = H(jstep);
 
-    [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)stratospheric_reaction_2(t,x), 1, Kmatrix_stratosperic);
-    % [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)stratospheric_reaction_2(t,x), 3, Kmatrix_stratosperic);
-    % [t,y] = RK_general(t0, tf, h, x0, @(t,x)stratospheric_reaction_2(t,x), 3);
-    % [t,y] = RK_general_corrected(t0, tf, h, x0, @(t,x)stratospheric_reaction_2(t,x), 3, Kmatrix_stratosperic);
+    [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)stratospheric_reaction(t,x), 1, @(t,y)jac_stratospheric(t,y));
+    % [t,y, Y_delta] = SDIRK_general_clipped(t0, tf, h, x0, @(t,x)stratospheric_reaction(t,x), 4, Kmatrix_stratosperic);
+    % [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)stratospheric_reaction(t,x), 3, Kmatrix_stratosperic);
+    % [t,y] = RK_general(t0, tf, h, x0, @(t,x)stratospheric_reaction(t,x), 3);
+    % [t,y] = RK_general_corrected(t0, tf, h, x0, @(t,x)stratospheric_reaction(t,x), 3, Kmatrix_stratosperic);
     
     error(jstep) = norm(y(:,end)' - x(end,:));
 end
