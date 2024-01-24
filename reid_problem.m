@@ -7,7 +7,7 @@ t0=-2;
 tf=2;
 
 % Array of step sizes
-H = logspace(-3,-1,8);
+H = logspace(-2,0,8);
 
 error=zeros(length(H),1);
 
@@ -23,9 +23,9 @@ for jstep=1:length(H)
     h = H(jstep);
 
     % [t,y] = SDIRK_general(t0, tf, h, initial_condition, @(t,x)prob.f_full(t,x), 6, @(t,y)prob.jac(t,y));
-    % [t,y, ~] = SDIRK_general_clipped(t0, tf, h, initial_condition, @(t,x)prob.f_full(t,x), 6, @(t,y)prob.jac(t,y));
-    [t,y] = SDIRK_general_corrected(t0, tf, h, initial_condition, @(t,x)prob.f_full(t,x), 2, Kmatrix, @(t,y)prob.jac(t,y));
-    % [t,y] = SDIRK_general_corrected_clipped(t0, tf, h, initial_condition, @(t,x)prob.f_full(t,x), 2, Kmatrix, @(t,y)prob.jac(t,y));
+    % [t,y, ~] = SDIRK_general_clipped(t0, tf, h, initial_condition, @(t,x)prob.f_full(t,x), 3, @(t,y)prob.jac(t,y));
+    % [t,y] = SDIRK_general_corrected(t0, tf, h, initial_condition, @(t,x)prob.f_full(t,x),4, Kmatrix, @(t,y)prob.jac(t,y));
+    [t,y] = SDIRK_general_corrected_clipped(t0, tf, h, initial_condition, @(t,x)prob.f_full(t,x), 6, Kmatrix, @(t,y)prob.jac(t,y));
 
     error(jstep) = norm(y(:,end)' - x(end,:));
 end

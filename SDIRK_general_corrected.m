@@ -5,6 +5,8 @@
 % y0 - initial value
 % ode_func - ODE function function handle
 % sdirk_method - function that returns constant coefficients associated with method
+% jacobian - Jacobian function
+
 
 %%
 function [t,y] = SDIRK_general_corrected(t0, tf, h, y0, ode_func, sdirk_method, matrix_func, jacobian )
@@ -48,8 +50,6 @@ for i = 2:length(t)
 
         func_y = @(ys) U - ys + dt*gamma*ode_func(t(i-1) + dt*c(istage), ys);
 
-        % solver_func = @(y_stage)nonlinear_system_solver(U, dt, gamma, y_stage, matrix_func, t(i-1) + dt*c(istage));
-
         y_stage = newton_iteration(func_y, @(Y)-eye(length(U))+ dt*gamma*jacobian(t(i-1)+dt*c(istage), Y), y(:,i-1));
 
         Y(:,istage) = y_stage;
@@ -64,8 +64,9 @@ for i = 2:length(t)
         y_new = y_stage;
     end
 
+    Fmean = zeros(length(y0));
     for idx = 1:s
-        Fmean = b(idx)*matrix_func(Y(:,idx), t(i-1) + dt*c(idx))*diag(Y(:,idx)./y_new);
+        Fmean = Fmean + b(idx)*matrix_func(Y(:,idx), t(i-1) + dt*c(idx))*diag(Y(:,idx)./y_new);
     end
 
     y(:,i) = (eye(length(Fmean)) - dt*Fmean)\y(:,i-1);
@@ -87,11 +88,6 @@ while i < 100
     end
     u_0 = u_f;
 end
-end
-
-function Y = nonlinear_system_solver(U, dt, gamma, Y_stage, matrix_func, t)
-KY = matrix_func(Y_stage, t);
-Y = U + (dt*gamma*KY - eye(length(KY)))*Y_stage;
 end
 
 

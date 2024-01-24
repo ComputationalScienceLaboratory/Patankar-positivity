@@ -10,7 +10,7 @@ t0=0;
 tf=200;
 
 % Array of step sizes
-H = logspace(-3,-1,6);
+H = logspace(-3,1,6);
 
 % Error array initialization
 error=zeros(length(H),1);
@@ -22,13 +22,18 @@ Kmatrix_mapk = @(Y, t) calculateKmatrix(Y);
 
 for jstep=1:length(H)
     h = H(jstep);
-    
-    % [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)mapk_cascade(t,x), 2, @(t,y)jac_mapk(t,y));
-    % [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)mapk_cascade(t,x), 2, Kmatrix_mapk, @(t,y)jac_mapk(t,y));
-    [t,y, ~] = SDIRK_general_clipped(t0, tf, h, x0, @(t,x)mapk_cascade(t,x), 3, @(t,y)jac_mapk(t,y));
-    % [t,y] = RK_general(t0, tf, h, x0, @(t,x)mapk_cascade(t,x), 3);
-    % [t,y] = RK_general_clipped(t0, tf, h, x0, @(t,x)mapk_cascade(t,x), 2, Kmatrix_mapk);
-    % [t,y] = RK_general_corrected(t0, tf, h, x0, @(t,x)mapk_cascade(t,x), 3, Kmatrix_mapk);
+
+    % % Original SDIRK method
+    [t,y] = SDIRK_general(t0, tf, h, x0, @(t,x)mapk_cascade(t,x), 6, @(t,y)jac_mapk(t,y));
+
+    % % Applying clipping
+    % [t,y] = SDIRK_general_clipped(t0, tf, h, x0, @(t,x)mapk_cascade(t,x), 6, @(t,y)jac_mapk(t,y));
+
+    % % Applying correction for Y_stage
+    % [t,y] = SDIRK_general_corrected(t0, tf, h, x0, @(t,x)mapk_cascade(t,x), 6, Kmatrix_mapk, @(t,y)jac_mapk(t,y));
+
+    % % Applying both clipping and correction
+    % [t,y] = SDIRK_general_corrected_clipped(t0, tf, h, x0, @(t,x)mapk_cascade(t,x), 6, Kmatrix_mapk, @(t,y)jac_mapk(t,y));
 
     error(jstep) = norm(y(:,end)' - x(end,:));
 end
@@ -40,39 +45,38 @@ loglog(H,error);
 fprintf('The empirical order is approximately: %f\n', err(1))
 
 function [alpha,k] = mapk_parameters
-    alpha=1;
-    k=[100/3; 1/3; 50; 0.5; 10/3; 0.1; 7/10];
+alpha=1;
+k=[100/3; 1/3; 50; 0.5; 10/3; 0.1; 7/10];
 end
 
+% Jacobiam matrix
 function dkY = jac_mapk(t,Y)
-    [alpha,k] = mapk_parameters;
-    dkY_dY1 = [0 0 0 0 0 0; 
-        0 (-k(1)) 0 0 0 0; 
-        0 0 (-k(3)) 0 0 0; 
-        0 (alpha*k(1)) 0 0 0 0; 
-        0 0 (k(3)) 0 0 0; 
-        0 0 0 0 0 0];
-    
-    dkY_dY2 = [(-k(1)) 0 0 0 0 0; 
-        0 0 0 0 0 0; 
-        0 0 0 0 0 0; 
-        (1-alpha)*(k(1)) 0 0 0 0 0; 
-        0 0 0 0 0 0; 
-        0 0 0 0 0 0];
-    
-    dkY = dkY_dY1*Y(1) + dkY_dY2*Y(2);
+[alpha,k] = mapk_parameters;
+dkY_dY1 = [0 0 0 0 0 0;
+    0 (-k(1)) 0 0 0 0;
+    0 0 (-k(3)) 0 0 0;
+    0 (alpha*k(1)) 0 0 0 0;
+    0 0 (k(3)) 0 0 0;
+    0 0 0 0 0 0];
+
+dkY_dY2 = [(-k(1)) 0 0 0 0 0;
+    0 0 0 0 0 0;
+    0 0 0 0 0 0;
+    (1-alpha)*(k(1)) 0 0 0 0 0;
+    0 0 0 0 0 0;
+    0 0 0 0 0 0];
+
+dkY = dkY_dY1*Y(1) + dkY_dY2*Y(2);
 end
 
 
 function kY = calculateKmatrix(Y, t)
-    [alpha, k] = mapk_parameters();
-    kY = [(-k(7)-k(1)*Y(2)) 0 0 k(2) 0 k(6); 
-          0 (-k(1)*Y(1)) k(5) 0 0 0; 
-          0 0 (-k(3)*Y(1)-k(5)) k(2) k(4) 0; 
-          (1-alpha)*(k(1)*Y(2)) (alpha*k(1)*Y(1)) 0 (-k(2)) 0 0; 
-          0 0 (k(3)*Y(1)) 0 (-k(4)) 0; 
-          k(7) 0 0 0 0 (-k(6))];
+[alpha, k] = mapk_parameters();
+kY = [(-k(7)-k(1)*Y(2)) 0 0 k(2) 0 k(6);
+    0 (-k(1)*Y(1)) k(5) 0 0 0;
+    0 0 (-k(3)*Y(1)-k(5)) k(2) k(4) 0;
+    (1-alpha)*(k(1)*Y(2)) (alpha*k(1)*Y(1)) 0 (-k(2)) 0 0;
+    0 0 (k(3)*Y(1)) 0 (-k(4)) 0;
+    k(7) 0 0 0 0 (-k(6))];
 end
-
-
 

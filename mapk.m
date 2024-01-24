@@ -3,34 +3,46 @@ close all; clc; clear
 Ode_Function        = @(t,x)mapk_cascade(t,x);
 Ode_Jacobian        = @jac_mapk;
 Time_Interval       = [ 0 200 ];
-Y0                  = [ 0.1; 0.175; 0.15; 1.15; 0.81; 0.5 ];
+%Y0                  = [ 0.1; 0.175; 0.15; 1.15; 0.81; 0.5 ];
 
-tol = [1.e-10 1.e-9 1.e-8 1.e-7 1.e-6];
+Y0 = [0.1408
+    0.0646
+    0.0853
+    1.1396
+    0.9954
+    0.4695];
+
+tol = logspace(-8, -5, 80);
 error=zeros(length(tol),1);
 
 steps=zeros(length(tol),1);
 
-integrator = matlode.rk.dirk.SDIRK_2_1_2;
+integrator = matlode.rk.erk.DormandPrince;
 options.Jacobian = Ode_Jacobian;
 
 
-sol = integrator.integrate(Ode_Function, Time_Interval, Y0, options);
+
+opt = odeset('RelTol',1.e-12,'AbsTol',1.e-12, 'Jacobian', @jac_mapk, 'NonNegative', ones(length(Y0),1));
+s = ode15s(@(t,x)mapk_cascade(t,x), Time_Interval, Y0, opt);
 
 for step=1:length(tol)
-    % options.ErrNorm = matlode.errnorm.InfNorm(tol(step), tol(step));
+    % options.ErrNorm = matlode.errnorm.InfNorm(0.01, tol(step));
+    % sol = integrator.integrate(Ode_Function, Time_Interval, Y0, options);
 
     opts = odeset('RelTol',tol(step),'AbsTol',tol(step), 'Jacobian', @jac_mapk, 'NonNegative', ones(length(Y0),1));
-    [t,x] = ode23t(@(t,x)mapk_cascade(t,x), Time_Interval, Y0, opts);
-    
+    solOde = ode23t(@(t,x)mapk_cascade(t,x), Time_Interval, Y0, opts);
 
-    error(step) = norm(sol.y(:,end)' - x(end,:));
-    % steps(step) = sol.stats.nSteps;
+    error(step) = norm(s.y(:,end) - solOde.y(:,end));
+    steps(step) = solOde.stats.nsteps;
 end
 
-err = polyfit(log(tol),log(error),1);
+err = polyfit(log(steps),log(error),1);
 
-loglog(tol, error);
-fprintf('The empirical order is approximately: %f\n', err(1))
+loglog(steps, error);
+xlabel('steps');
+ylabel('error');
+fprintf('The empirical order is approximately: %f\n', -err(1))
+
 
 
 %%

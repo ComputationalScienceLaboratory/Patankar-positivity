@@ -5,10 +5,11 @@
 % y0 - initial value
 % ode_func - ODE function function handle
 % sdirk_method - function that returns constant coefficients associated with method
+% jacobian - Jacobian function
 
 
 %%
-function [t,y,Y_delta] = SDIRK_general_clipped(t0, tf, h, y0, ode_func, sdirk_method, jacobian )
+function [t,y] = SDIRK_general_clipped(t0, tf, h, y0, ode_func, sdirk_method, jacobian )
 
 % Create time grid
 Nsteps = ceil( (tf-t0) / h );
@@ -30,8 +31,6 @@ s = length(b);
 % Initialize stages
 F = zeros(length(y0), s);
 Y = zeros(length(y0), s);
-% Y_clip = zeros(length(y0), s);
-Y_delta = zeros(1, s*Nsteps);
 
 opt.Display = 'off';
 opt.StepTolerance = 1e-10;
@@ -45,10 +44,6 @@ opt.FiniteDifferenceType = 'central';
 for i = 2:length(t)
     dt = t(i) - t(i - 1);
 
-    % if(mod(i,100)==0)
-    %     disp((t(i)-t(1))/(t(end)-t(1))*100);
-    % end
-
     % Loop over stages
     for istage = 1:s
         U = y(:,i-1);
@@ -57,15 +52,11 @@ for i = 2:length(t)
             U = U + dt*A(istage, j)*F(:,j);
         end
 
-        % Y(:,istage) = U + dt*gamma*ode_func(t(i), Y(:,istage));
         func_y = @(ys) U - ys + dt*gamma*ode_func(t(i-1) + dt*c(istage), ys);
 
-        % solver_func = @(y_stage)nonlinear_system_solver(U, dt, gamma, y_stage, matrix_func, t(i-1) + dt*c(istage));
         [y_stage] = newton_iteration(func_y,  @(Y)-eye(length(U))+ dt*gamma*jacobian(t(i-1)+dt*c(istage), Y), y(:,i-1));
 
         Y(:,istage) = max(y_stage,0);
-
-        % Y_delta(:,s * (i-2) + istage) = norm(Y(:,istage) - Y_clip(:,istage)) / norm(Y(:,istage));
 
         F(:,istage) = ode_func(t(i-1) + dt*c(istage), Y(:,istage));
     end
@@ -96,11 +87,6 @@ while i < 100
     end
     u_0 = u_f;
 end
-end
-
-function Y = nonlinear_system_solver(U, dt, gamma, Y_stage, matrix_func, t)
-KY = matrix_func(Y_stage, t);
-Y = U + (dt*gamma*KY - eye(length(KY)))*Y_stage;
 end
 
 
